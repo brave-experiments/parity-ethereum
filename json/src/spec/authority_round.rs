@@ -95,22 +95,28 @@ pub struct AuthorityRoundParams {
 	pub strict_empty_steps_transition: Option<Uint>,
 	/// First block for which a 2/3 quorum (instead of 1/2) is required.
 	pub two_thirds_majority_transition: Option<Uint>,
+	/// The addresses of contracts that determine the block gas limit starting from the block number
+	/// associated with each of those contracts.
+	pub block_gas_limit_contract_transitions: Option<BTreeMap<Uint, Address>>,
 }
 
 /// Authority engine deserialization.
 #[derive(Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorityRound {
-	/// Ethash params.
+	/// Authority Round parameters.
 	pub params: AuthorityRoundParams,
 }
 
 #[cfg(test)]
 mod tests {
-	use super::{Address, Uint, StepDuration};
-	use ethereum_types::{U256, H160};
-	use crate::spec::{validator_set::ValidatorSet, authority_round::AuthorityRound};
 	use std::str::FromStr;
+
+	use ethereum_types::{U256, H160};
+	use serde_json;
+
+	use super::{Address, Uint, StepDuration};
+	use crate::{spec::{validator_set::ValidatorSet, authority_round::AuthorityRound}};
 
 	#[test]
 	fn authority_round_deserialization() {
@@ -124,7 +130,11 @@ mod tests {
 				"validateStepTransition": 150,
 				"blockReward": 5000000,
 				"maximumUncleCountTransition": 10000000,
-				"maximumUncleCount": 5
+				"maximumUncleCount": 5,
+				"blockGasLimitContractTransitions": {
+					"10": "0x1000000000000000000000000000000000000001",
+					"20": "0x2000000000000000000000000000000000000002"
+				}
 			}
 		}"#;
 
@@ -138,6 +148,10 @@ mod tests {
 		assert_eq!(deserialized.params.immediate_transitions, None);
 		assert_eq!(deserialized.params.maximum_uncle_count_transition, Some(Uint(10_000_000.into())));
 		assert_eq!(deserialized.params.maximum_uncle_count, Some(Uint(5.into())));
-
+		let expected_bglc =
+			[(Uint(10.into()), Address(H160::from_str("1000000000000000000000000000000000000001").unwrap())),
+			 (Uint(20.into()), Address(H160::from_str("2000000000000000000000000000000000000002").unwrap()))];
+		assert_eq!(deserialized.params.block_gas_limit_contract_transitions,
+				   Some(expected_bglc.to_vec().into_iter().collect()));
 	}
 }

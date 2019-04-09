@@ -42,6 +42,7 @@ use std::u64;
 
 use client_traits::EngineClient;
 use engine::{Engine, ConstructedVerifier};
+use block_gas_limit::block_gas_limit;
 use block_reward::{self, BlockRewardContract, RewardKind};
 use ethjson;
 use machine::{
@@ -75,7 +76,6 @@ use common_types::{
 	snapshot::Snapshotting,
 };
 use unexpected::{Mismatch, OutOfBounds};
-
 use validator_set::{ValidatorSet, SimpleList, new_validator_set};
 
 mod finality;
@@ -117,6 +117,9 @@ pub struct AuthorityRoundParams {
 	pub maximum_empty_steps: usize,
 	/// Transition block to strict empty steps validation.
 	pub strict_empty_steps_transition: u64,
+	/// The addresses of contracts that determine the block gas limit with their associated block
+	/// numbers.
+	pub block_gas_limit_contract_transitions: BTreeMap<u64, Address>,
 }
 
 const U16_MAX: usize = ::std::u16::MAX as usize;
@@ -168,6 +171,12 @@ impl From<ethjson::spec::AuthorityRoundParams> for AuthorityRoundParams {
 				BlockRewardContract::new_from_address(address.into())
 			);
 		}
+		let block_gas_limit_contract_transitions: BTreeMap<_, _> =
+			p.block_gas_limit_contract_transitions
+			.unwrap_or_default()
+			.into_iter()
+			.map(|(block_num, address)| (block_num.into(), address.into()))
+			.collect();
 		AuthorityRoundParams {
 			step_durations,
 			validators: new_validator_set(p.validators),
@@ -183,6 +192,7 @@ impl From<ethjson::spec::AuthorityRoundParams> for AuthorityRoundParams {
 			maximum_empty_steps: p.maximum_empty_steps.map_or(0, Into::into),
 			two_thirds_majority_transition: p.two_thirds_majority_transition.map_or_else(BlockNumber::max_value, Into::into),
 			strict_empty_steps_transition: p.strict_empty_steps_transition.map_or(0, Into::into),
+			block_gas_limit_contract_transitions,
 		}
 	}
 }
@@ -550,6 +560,8 @@ pub struct AuthorityRound {
 	machine: Machine,
 	/// History of step hashes recently received from peers.
 	received_step_hashes: RwLock<BTreeMap<(u64, Address), H256>>,
+	/// The addresses of contracts that determine the block gas limit.
+	block_gas_limit_contract_transitions: BTreeMap<u64, Address>,
 }
 
 // header-chain validator.
@@ -851,6 +863,7 @@ impl AuthorityRound {
 				strict_empty_steps_transition: our_params.strict_empty_steps_transition,
 				machine,
 				received_step_hashes: RwLock::new(Default::default()),
+				block_gas_limit_contract_transitions: our_params.block_gas_limit_contract_transitions,
 			});
 
 		// Do not initialize timeouts for tests.
@@ -1167,6 +1180,14 @@ impl Engine for AuthorityRound {
 
 		let score = calculate_score(parent_step, current_step, current_empty_steps_len);
 		header.set_difficulty(score);
+		if let Some(gas_limit) = self.gas_limit_override(header) {
+			trace!(target: "engine", "Setting gas limit to {} for block {}.", gas_limit, header.number());
+			let parent_gas_limit = *parent.gas_limit();
+			header.set_gas_limit(gas_limit);
+			if parent_gas_limit != gas_limit {
+				info!(target: "engine", "Block gas limit was changed from {} to {}.", parent_gas_limit, gas_limit);
+			}
+		}
 	}
 
 	fn sealing_state(&self) -> SealingState {
@@ -1780,6 +1801,25 @@ impl Engine for AuthorityRound {
 	fn params(&self) -> &CommonParams {
 		self.machine.params()
 	}
+
+	fn gas_limit_override(&self, header: &Header) -> Option<U256> {
+		let (_, &address) = self.block_gas_limit_contract_transitions.range(..=header.number()).last()?;
+		let client = match self.client.read().as_ref().and_then(|weak| weak.upgrade()) {
+			Some(client) => client,
+			None => {
+				error!(target: "engine", "Unable to prepare block: missing client ref.");
+				return None;
+			}
+		};
+		let full_client = match client.as_full_client() {
+			Some(full_client) => full_client,
+			None => {
+				error!(target: "engine", "Failed to upgrade to BlockchainClient.");
+				return None;
+			}
+		};
+		block_gas_limit(full_client, header, address)
+	}
 }
 
 /// A helper accumulator function mapping a step duration and a step duration transition timestamp
@@ -1852,6 +1892,7 @@ mod tests {
 			block_reward_contract_transitions: Default::default(),
 			strict_empty_steps_transition: 0,
 			two_thirds_majority_transition: 0,
+			block_gas_limit_contract_transitions: BTreeMap::new(),
 		};
 
 		// mutate aura params
