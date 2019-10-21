@@ -113,7 +113,7 @@ impl TransactionFilter {
 							.and_then(|value| decoder.decode(&value).map_err(|e| e.to_string()))
 							.map(|(p, f)| (p.low_u32(), f))
 					}
-					0xffff_ffff_ffff_fffe => {
+					3 => {
 						trace!(target: "tx_filter", "Using filter with gas price");
 						let (data, decoder) = transact_acl_gas_price::functions::allowed_tx_types::call(
 							sender, to, value, gas_price, transaction.data.clone()
