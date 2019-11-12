@@ -1,0 +1,51 @@
+[account]
+password = ["password.txt"]
+unlock = ["0x2d497a9e3519b708e2f4c7845ebcb0786d009f2d"]
+
+[ipc]
+disable = true
+
+[ipfs]
+enable = false
+
+[mining]
+engine_signer = "0x2d497a9e3519b708e2f4c7845ebcb0786d009f2d"
+extra_data = "Parity"
+force_sealing = true
+hbbft_public_key_set = "{\"commit\":{\"coeff\":[[138,223,51,230,107,31,90,244,244,241,122,119,176,131,96,247,241,167,33,252,75,79,65,202,45,2,106,94,92,90,250,186,195,140,13,14,138,222,35,139,176,165,228,153,180,62,219,196],[135,58,205,10,95,156,110,189,16,119,115,145,202,138,20,243,150,195,209,220,172,206,152,226,62,188,95,170,188,145,98,20,209,141,167,97,9,182,123,47,140,24,147,132,196,247,45,198]]}}"
+hbbft_secret_share = "[11093288154329313566,10789078366148616167,11341371813914526369,3156302215826459782]"
+hbbft_validator_ip_addresses = "{\"0x810543120947797e478b3540887b6810ba17d0ea2331fd212aea769ab976cc77fd49c3149b5814bf41c6572120c964ffea775be3599a849c07f33409641a4527\":\"enode://810543120947797e478b3540887b6810ba17d0ea2331fd212aea769ab976cc77fd49c3149b5814bf41c6572120c964ffea775be3599a849c07f33409641a4527@Docker:30303\",\"0xa594367256345c6470fd60375b477ab8093b425231da785b85944bc3bbe0f11e23a3ff26fc1ee58979afa2f2fca39d48e9e12eacb7d1e2911281a1dd11aaaf07\":\"enode://a594367256345c6470fd60375b477ab8093b425231da785b85944bc3bbe0f11e23a3ff26fc1ee58979afa2f2fca39d48e9e12eacb7d1e2911281a1dd11aaaf07@Docker:30303\",\"0xae5fe5acb82d14b590123a5f18ddefc2914a208d85b09efb9deb9c4b18b536c530d0ea1c0f06f5b79c3b0b92672c0eb3790ac613b5dd9962af2f77230070ea41\":\"enode://ae5fe5acb82d14b590123a5f18ddefc2914a208d85b09efb9deb9c4b18b536c530d0ea1c0f06f5b79c3b0b92672c0eb3790ac613b5dd9962af2f77230070ea41@Docker:30303\",\"0xff1c7223dd9963a8757815ed0d12ff0b390d3df4c8a976a1c611fa06d5300c276203739b7d682de99bd63ef3a5fb6058d041b34cbeba88b849635a0e868abc0a\":\"enode://ff1c7223dd9963a8757815ed0d12ff0b390d3df4c8a976a1c611fa06d5300c276203739b7d682de99bd63ef3a5fb6058d041b34cbeba88b849635a0e868abc0a@Docker:30303\"}"
+min_gas_price = 1000000000
+reseal_min_period = 0
+reseal_on_txs = "none"
+
+[misc]
+log_file = "parity.log"
+logging = "engine=trace,miner=trace,reward=trace,consensus=trace,network=trace,sync=trace,poa=trace"
+
+[network]
+allow_ips = "public"
+nat = "extip:Docker"
+port = 30303
+reserved_peers = "reserved-peers"
+
+[parity]
+base_path = "data"
+chain = "spec.json"
+
+[rpc]
+apis = ["web3", "eth", "pubsub", "net", "parity", "parity_set", "parity_pubsub", "personal", "traces", "rpc", "shh", "shh_pubsub"]
+cors = ["all"]
+hosts = ["all"]
+port = 8545
+
+[secretstore]
+disable = true
+
+[ui]
+disable = true
+
+[websockets]
+interface = "all"
+origins = ["all"]
+port = 9540

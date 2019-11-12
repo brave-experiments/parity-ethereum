@@ -89,8 +89,8 @@ fn to_toml<N>(
 where
 	N: hbbft::NodeIdT + Serialize,
 {
-	let base_port = 30300i64;
-	let base_rpc_port = 8540i64;
+	let base_port = 30303i64;
+	let base_rpc_port = 8545i64;
 	let base_ws_port = 9540i64;
 
 	let mut parity = Map::new();
@@ -113,7 +113,7 @@ where
 	ui.insert("disable".into(), Value::Boolean(true));
 
 	let mut network = Map::new();
-	network.insert("port".into(), Value::Integer(base_port + i as i64));
+	network.insert("port".into(), Value::Integer(base_port as i64));
 	match config_type {
 		ConfigType::PosdaoSetup => {
 			network.insert(
@@ -158,12 +158,12 @@ where
 		"shh_pubsub",
 	]);
 	rpc.insert("apis".into(), apis);
-	rpc.insert("port".into(), Value::Integer(base_rpc_port + i as i64));
+	rpc.insert("port".into(), Value::Integer(base_rpc_port as i64));
 
 	let mut websockets = Map::new();
 	websockets.insert("interface".into(), Value::String("all".into()));
 	websockets.insert("origins".into(), to_toml_array(vec!["all"]));
-	websockets.insert("port".into(), Value::Integer(base_ws_port + i as i64));
+	websockets.insert("port".into(), Value::Integer(base_ws_port as i64));
 
 	let mut ipc = Map::new();
 	ipc.insert("disable".into(), Value::Boolean(true));
